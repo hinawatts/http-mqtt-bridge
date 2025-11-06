@@ -1,0 +1,18 @@
+<!-- src/main/resources/logback-spring.xml (optional) -->
+<configuration>
+    <springProfile name="default">
+        <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="STDOUT"/>
+        </root>
+
+        <!-- enable debug for your package -->
+        <logger name="com.hivemq.httpmqttbridge" level="DEBUG"/>
+    </springProfile>
+</configuration>
