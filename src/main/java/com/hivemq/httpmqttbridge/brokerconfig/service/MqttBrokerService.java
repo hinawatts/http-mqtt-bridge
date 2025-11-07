@@ -54,4 +54,7 @@ public class MqttBrokerService {
       throw new MqttBrokerNotFoundException(brokerId);
     });
   }
+  public void deleteAllBrokers() {
+    mqttBrokerRepository.deleteAll();
+  }
 }

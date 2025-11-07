@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -58,9 +59,14 @@ public class MqttBrokerController {
     return mqttBrokerService.getAllBrokers().stream().map(MqttBrokerResponse::fromBroker).toList();
   }
 
-  @DeleteMapping(path = "/{brokerId}/")
+  @DeleteMapping(path = "/")
   @Tag(name = "MQTT Broker Configuration", description = "API to delete MQTT broker configuration by broker ID")
-  public void deleteBrokerById(@PathVariable Long brokerId) {
+  public void deleteBrokerById(@RequestParam(required = false) Long brokerId) {
+
+    if(brokerId == null) {
+      mqttBrokerService.deleteAllBrokers();
+      return;
+    }
     mqttBrokerService.deleteBrokerById(brokerId);
   }
 }
