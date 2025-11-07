@@ -44,6 +44,5 @@ docker compose up --build
 ---
 
 ### Verify
-Once the containers are up, open:
+Refer Swagger UI: http://localhost:8080/swagger-ui for APIs hosted by this service
 
-Swagger UI: http://localhost:8080/swagger-ui
