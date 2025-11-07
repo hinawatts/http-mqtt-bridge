@@ -1,26 +1,27 @@
 package com.hivemq.httpmqttbridge.unit.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAck;
 import com.hivemq.httpmqttbridge.brokerconfig.domain.MqttBroker;
+import com.hivemq.httpmqttbridge.brokerconfig.domain.MqttBrokerCredentials;
 import com.hivemq.httpmqttbridge.brokerconfig.service.MqttBrokerService;
 import com.hivemq.httpmqttbridge.config.MqttProperties;
-import com.hivemq.httpmqttbridge.brokerconfig.domain.MqttBrokerCredentials;
 import com.hivemq.httpmqttbridge.exception.MqttBrokerNotFoundException;
 import com.hivemq.httpmqttbridge.external.client.hivemq.HiveMqttClientProvider;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class HiveMqttClientProviderTest {

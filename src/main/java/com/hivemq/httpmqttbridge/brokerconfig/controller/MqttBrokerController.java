@@ -60,7 +60,7 @@ public class MqttBrokerController {
   }
 
   @DeleteMapping(path = "/")
-  @Tag(name = "MQTT Broker Configuration", description = "API to delete MQTT broker configuration by broker ID")
+  @Tag(name = "MQTT Broker Configuration", description = "API to delete MQTT broker configuration by broker ID if provided, else delete all brokers")
   public void deleteBrokerById(@RequestParam(required = false) Long brokerId) {
 
     if(brokerId == null) {
