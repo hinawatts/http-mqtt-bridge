@@ -31,9 +31,11 @@ logging:
     org.flywaydb: DEBUG
 mqtt:
   brokers:
-    0:
+    0: #default broker
       userName: ${MQTT_USERNAME:}
       password: ${MQTT_PASSWORD:}
+    #Additional brokers can be configured as needed
+    # 1:
   publisher:
     qos: 1
     retain: false

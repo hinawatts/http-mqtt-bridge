@@ -28,11 +28,11 @@ Built with:
 ## Build & run
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/)
-- Mqtt Broker configured via cloud. This application is an implementation of HiveMq Client.
-- Mqtt Broker credentials are passed via environment variables.
+- Create HiveMqttBroker via [cloud console](https://console.hivemq.cloud/). This application is an implementation of HiveMq Client.
+- Mqtt Broker credentials are passed via environment variables. 
   - MQTT_USERNAME
   - MQTT_PASSWORD
-- For multiple broker support, you can configure username and password per broker in `application.yaml`.
+- For multiple broker support, you can configure username and password per broker in [application.yaml](/src/main/resources/application.yaml#L32-L37)
 
 ### Build and start the application
 - Set the environment variables for broker credentials in `.env` file or export them in your shell.
