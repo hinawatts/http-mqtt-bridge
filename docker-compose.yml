@@ -1,24 +1,36 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: mqtt_bridge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"   # optional; remove if not needed
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   http-mqtt-bridge:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mqtt_bridge
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      MQTT_BROKER_1_USERNAME: ${MQTT_BROKER_1_USERNAME}
+      MQTT_BROKER_1_PASSWORD: ${MQTT_BROKER_1_PASSWORD}
+      # Optional app configs:
+      # MQTT_PUBLISHER_QOS: "1"
+      # MQTT_PUBLISHER_RETAIN: "false"
     ports:
       - "8080:8080"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mqtt-broker
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
-    depends_on:
-      - db
+    restart: unless-stopped
 
-  db:
-    image: postgres:14
-    ports:
-      - "25432:5432"
-    environment:
-      - POSTGRES_DB=mqtt-broker
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+volumes:
+  pgdata:

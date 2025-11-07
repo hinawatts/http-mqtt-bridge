@@ -1,4 +1,3 @@
-<!-- src/main/resources/logback-spring.xml (optional) -->
 <configuration>
     <springProfile name="default">
         <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>
@@ -13,6 +12,6 @@
         </root>
 
         <!-- enable debug for your package -->
-        <logger name="com.hivemq.httpmqttbridge" level="DEBUG"/>
+        <logger name="com.hivemq.httpmqttbridge" level="INFO"/>
     </springProfile>
 </configuration>

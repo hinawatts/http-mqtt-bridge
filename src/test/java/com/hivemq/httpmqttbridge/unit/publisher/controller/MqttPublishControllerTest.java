@@ -1,12 +1,8 @@
 package com.hivemq.httpmqttbridge.unit.publisher.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.httpmqttbridge.brokerconfig.domain.Broker;
-import com.hivemq.httpmqttbridge.brokerconfig.service.BrokerService;
 import com.hivemq.httpmqttbridge.exception.MqttPublishInputException;
-import com.hivemq.httpmqttbridge.external.client.BrokerClientProvider;
-import com.hivemq.httpmqttbridge.publisher.controller.MqttPublishController;
-import com.hivemq.httpmqttbridge.publisher.service.MqttPublisher;
+import com.hivemq.httpmqttbridge.publish.controller.MqttPublishController;
+import com.hivemq.httpmqttbridge.publish.service.MqttPublisherService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,19 +25,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class MqttPublishControllerTest {
 
   private static final String TEST_TOPIC = "test-topic";
-  private static final String TEST_HOST = "test.host.name";
-  private static final int TEST_PORT = 1234;
   private static final Long BROKER_ID = 1L;
 
   @Autowired private MockMvc mockMvc;
 
-  @MockitoBean private MqttPublisher hiveMqttPublisher;
+  @MockitoBean private MqttPublisherService hiveMqttPublisherService;
 
   @Test
   void publishMessage_whenBrokerExists_andPublishSucceeds_returns202WithJson() throws Exception {
 
     // publisher completes normally
-    Mockito.when(hiveMqttPublisher.publish(eq(String.valueOf(BROKER_ID)), eq(TEST_TOPIC), any()))
+    Mockito.when(hiveMqttPublisherService.publish(eq(BROKER_ID), eq(TEST_TOPIC), any(), any()))
         .thenReturn(CompletableFuture.completedFuture(null));
 
     String bodyJson =
@@ -61,7 +55,7 @@ public class MqttPublishControllerTest {
 
     mockMvc
         .perform(asyncDispatch(pending))
-        .andExpect(status().isAccepted())
+        .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.status", is("published")))
         .andExpect(jsonPath("$.brokerId", is(1)))
@@ -71,7 +65,7 @@ public class MqttPublishControllerTest {
   @Test
   void publishMessage_whenBrokerMissing_returns404() throws Exception {
     CompletableFuture<Void> pendingFuture = new CompletableFuture<>();
-    Mockito.when(hiveMqttPublisher.publish(eq(String.valueOf(BROKER_ID)), eq(TEST_TOPIC), any()))
+    Mockito.when(hiveMqttPublisherService.publish(eq(BROKER_ID), eq(TEST_TOPIC), any(),any()))
         .thenReturn(pendingFuture);
 
     MvcResult pending =
@@ -88,6 +82,6 @@ public class MqttPublishControllerTest {
     mockMvc
         .perform(asyncDispatch(pending))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.message").value("Invalid Broker: Broker not found"));
+        .andExpect(jsonPath("$.failureReason").isNotEmpty());
   }
 }

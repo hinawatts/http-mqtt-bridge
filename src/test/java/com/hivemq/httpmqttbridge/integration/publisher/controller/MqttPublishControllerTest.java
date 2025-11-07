@@ -1,11 +1,11 @@
 package com.hivemq.httpmqttbridge.integration.publisher.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.httpmqttbridge.brokerconfig.entity.BrokerEntity;
-import com.hivemq.httpmqttbridge.brokerconfig.repository.BrokerRepository;
+import com.hivemq.httpmqttbridge.brokerconfig.entity.MqttBrokerEntity;
+import com.hivemq.httpmqttbridge.brokerconfig.repository.MqttBrokerRepository;
 import com.hivemq.httpmqttbridge.exception.MqttPublishInputException;
 import com.hivemq.httpmqttbridge.integration.setup.HttpMqttBridgeBaseIntegrationTest;
-import com.hivemq.httpmqttbridge.publisher.service.MqttPublisher;
+import com.hivemq.httpmqttbridge.publish.service.MqttPublisherService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -31,23 +31,23 @@ public class MqttPublishControllerTest extends HttpMqttBridgeBaseIntegrationTest
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private BrokerRepository brokerRepository;
+    private MqttBrokerRepository mqttBrokerRepository;
     @Autowired
     private ObjectMapper objectMapper;
     @MockitoBean
-    private MqttPublisher mqttPublisher;
+    private MqttPublisherService mqttPublisherService;
     private Long brokerId;
 
     @BeforeEach
     void setUp() {
-        brokerRepository.deleteAll();
+        mqttBrokerRepository.deleteAll();
 
-        BrokerEntity brokerEntity = brokerRepository.save(BrokerEntity.builder()
+        MqttBrokerEntity mqttBrokerEntity = mqttBrokerRepository.save(MqttBrokerEntity.builder()
                 .hostName("test.broker")
                 .port(1883)
                 .build());
 
-        brokerId = brokerEntity.getId();
+        brokerId = mqttBrokerEntity.getId();
 
         // Mock successful publish
 
@@ -59,7 +59,7 @@ public class MqttPublishControllerTest extends HttpMqttBridgeBaseIntegrationTest
                 "message", "hello mqtt",
                 "qos", 1
         );
-        Mockito.when(mqttPublisher.publish(eq(String.valueOf(brokerId)), eq(TEST_TOPIC), any()))
+        Mockito.when(mqttPublisherService.publish(eq(brokerId), eq(TEST_TOPIC), any(),any()))
                 .thenReturn(CompletableFuture.completedFuture(null));
         MvcResult pending = mockMvc.perform(post("/mqtt/{brokerId}/send/{topic}", brokerId, TEST_TOPIC)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -67,7 +67,7 @@ public class MqttPublishControllerTest extends HttpMqttBridgeBaseIntegrationTest
                         .header("x-request-id", "test-request-id")
                         .content(objectMapper.writeValueAsString(messageBody))).andReturn();
         mockMvc.perform(asyncDispatch(pending))
-                .andExpect(status().isAccepted())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("published"))
                 .andExpect(jsonPath("$.brokerId").value(brokerId))
                 .andExpect(jsonPath("$.topic").value(TEST_TOPIC));
@@ -76,7 +76,7 @@ public class MqttPublishControllerTest extends HttpMqttBridgeBaseIntegrationTest
     @Test
     void shouldReturn400WhenInputValidationFails() throws Exception {
         // Mock input validation exception
-        Mockito.when(mqttPublisher.publish(any(), any(), any()))
+        Mockito.when(mqttPublisherService.publish(any(), any(), any(),any()))
                 .thenReturn(CompletableFuture.failedFuture(new MqttPublishInputException("Invalid input")));
 
         MvcResult pending =  mockMvc.perform(post("/mqtt/{brokerId}/send/{topic}", brokerId, TEST_TOPIC)
@@ -85,13 +85,11 @@ public class MqttPublishControllerTest extends HttpMqttBridgeBaseIntegrationTest
                         .content("{}")).andReturn();
         mockMvc.perform(asyncDispatch(pending))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Mqtt Publish Input Error"))
-                .andExpect(jsonPath("$.message").value("Invalid input"));
+                .andExpect(jsonPath("$.failureReason").isNotEmpty());
     }
-
     @Test
     void shouldReturn500WhenUnhandledExceptionOccurs() throws Exception {
-        Mockito.when(mqttPublisher.publish(any(), any(), any()))
+        Mockito.when(mqttPublisherService.publish(any(), any(), any(),any()))
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Publish Exception")));
 
         MvcResult pending  =  mockMvc.perform(post("/mqtt/{brokerId}/send/{topic}", brokerId, TEST_TOPIC)

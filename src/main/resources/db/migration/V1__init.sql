@@ -2,11 +2,11 @@
 -- Create users table
 CREATE TABLE brokers (
                          id BIGSERIAL PRIMARY KEY,
-                         host_name TEXT NOT NULL UNIQUE,
+                         host_name TEXT NOT NULL,
                          port INTEGER NOT NULL CHECK (port BETWEEN 1 AND 65535),
                          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes
-CREATE INDEX idx_brokers_hostname ON brokers(host_name);
+CREATE UNIQUE INDEX idx_broker_host_port ON brokers (host_name, port);

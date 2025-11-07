@@ -1,12 +1,11 @@
 package com.hivemq.httpmqttbridge.common.web;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Map;
 
 @Data
 @Builder
@@ -14,10 +13,11 @@ import java.util.Map;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse {
-	private int status;
-	private String error;
-	private String message;
-	private Map<String, String> errors;
+
+  private int status;
+  private String error;
+  private String message;
+  private Map<String, String> errors;
 }
 
 

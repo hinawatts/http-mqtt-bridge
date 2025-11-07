@@ -1,17 +1,14 @@
 spring:
   application:
-    name: hivemq-broker
+    name: http-mqtt-bridge
   mvc:
     async:
       request-timeout: 0
 
-
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:25432/mqtt-broker}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mqtt_bridge}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    # username: postgres
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
-    # password: postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -34,16 +31,15 @@ logging:
     org.flywaydb: DEBUG
 mqtt:
   brokers:
-    default:
+    0:
       userName: ${MQTT_USERNAME:}
       password: ${MQTT_PASSWORD:}
-    "2":
-      userName: ${MQTT_BROKER_CLOUD1_USERNAME:}
-      password: ${MQTT_BROKER_CLOUD1_PASSWORD:}
   publisher:
     qos: 1
-    retain: true
-  consumer:
-    batch-size: 10
-    batch-timeout-ms: 8000
+    retain: false
+  subscription:
+    sse:
+      heartbeat-interval-ms: 15000
+    mqtt:
+      timeout-ms: 5000
 

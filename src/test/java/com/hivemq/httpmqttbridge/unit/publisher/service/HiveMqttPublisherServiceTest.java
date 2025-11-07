@@ -4,78 +4,81 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
-import com.hivemq.httpmqttbridge.brokerconfig.domain.Broker;
-import com.hivemq.httpmqttbridge.brokerconfig.service.BrokerService;
-import com.hivemq.httpmqttbridge.external.client.BrokerClientProvider;
-import com.hivemq.httpmqttbridge.publisher.service.HiveMqttPublisherService;
+import com.hivemq.httpmqttbridge.external.client.MqttBrokerClientProvider;
+import com.hivemq.httpmqttbridge.publish.service.HiveMqttPublisherService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static java.nio.file.Files.readString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest(classes = HiveMqttPublisherServiceTest.class)
-public class HiveMqttPublisherServiceTest {
+@ExtendWith(MockitoExtension.class)
+class HiveMqttPublisherServiceTest {
 
-    @MockitoBean
-    BrokerClientProvider<Mqtt5AsyncClient> provider;
+  @Mock
+  MqttBrokerClientProvider<Mqtt5AsyncClient> provider;
 
-    @MockitoBean
-    private  BrokerService brokerService;
+  @Mock
+  Mqtt5AsyncClient client;
 
-    @MockitoBean
-    private ObjectMapper objectMapper;
+  @Mock
+  ObjectMapper objectMapper;
 
-    @Captor
-    ArgumentCaptor<Mqtt5Publish> publishCaptor;
+  @Captor
+  ArgumentCaptor<Mqtt5Publish> publishCaptor;
 
-    @MockitoBean
-    Mqtt5AsyncClient client;
+  private HiveMqttPublisherService publisher;
 
-    HiveMqttPublisherService publisher;
+  @BeforeEach
+  void setUp() {
+    publisher = new HiveMqttPublisherService(provider, objectMapper);
+    // set private @Value fields used by the publisher
+    ReflectionTestUtils.setField(publisher, "qos", 1);     // maps to AT_LEAST_ONCE
+    ReflectionTestUtils.setField(publisher, "retain", true);
+  }
 
-    @BeforeEach
-    void setUp() {
-        publisher = new HiveMqttPublisherService(provider, objectMapper, brokerService);
-        ReflectionTestUtils.setField(publisher, "qos", 1);
-        ReflectionTestUtils.setField(publisher, "retain", true);
-    }
+  @Test
+  void publish_success_buildsMessageAndCompletes() throws Exception {
+    // Arrange
+    Long brokerId = 1L;
+    String topic = "test/topic";
+    Map<String, Object> payload = Map.of("msg", "hello");
 
-    @Test
-    void publish_success_buildsMessageAndCompletes() throws Exception {
-        String brokerId = "1";
-        String topic = "test/topic";
-        var payload = java.util.Map.of("msg", "hello");
+    when(objectMapper.writeValueAsBytes(payload))
+        .thenReturn("{\"msg\":\"hello\"}".getBytes());
 
-        when(brokerService.getBrokerByBrokerId(1L))
-                .thenReturn(Optional.of(new Broker(1L,"h",1883)));
-        when(objectMapper.writeValueAsBytes(payload)).thenReturn("{\"msg\":\"hello\"}".getBytes());
-        when(provider.getClient(brokerId))
-                .thenReturn(CompletableFuture.completedFuture(client));
-        when(client.publish(any(Mqtt5Publish.class)))
-                .thenReturn(CompletableFuture.completedFuture(null));
+    when(provider.getClient(brokerId))
+        .thenReturn(CompletableFuture.completedFuture(client));
 
-        CompletableFuture<Void> publishFuture = publisher.publish(brokerId, topic, payload);
-        assertThatCode(publishFuture::join).doesNotThrowAnyException();
+    // HiveMQ async client returns a future when publishing; we complete it successfully
+    when(client.publish(any(Mqtt5Publish.class)))
+        .thenReturn(CompletableFuture.completedFuture(null));
 
-        verify(client).publish(publishCaptor.capture());
-        Mqtt5Publish sent = publishCaptor.getValue();
-        assertThat(sent.getTopic().toString()).isEqualTo(topic);
-        assertThat(sent.getQos()).isEqualTo(MqttQos.AT_LEAST_ONCE); // qos=1
-        assertThat(sent.isRetain()).isTrue();
-        verify(provider).getClient("1");
-    }
+    // Act
+    var publishFuture = publisher.publish(brokerId, topic, payload, "req-1");
 
+    // Assert
+    assertThatCode(publishFuture::join).doesNotThrowAnyException();
+
+    verify(client).publish(publishCaptor.capture());
+    Mqtt5Publish sent = publishCaptor.getValue();
+
+    assertThat(sent.getTopic().toString()).isEqualTo(topic);
+    assertThat(sent.getQos()).isEqualTo(MqttQos.AT_LEAST_ONCE); // qos=1
+    assertThat(sent.isRetain()).isTrue();
+
+    verify(provider).getClient(brokerId);
+  }
 }
