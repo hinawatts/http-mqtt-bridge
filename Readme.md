@@ -39,7 +39,7 @@ Built with:
 - Run the following command from the project root:
 
 ```bash
-docker compose up --build i
+docker compose up --build
 ```
 ---
 
